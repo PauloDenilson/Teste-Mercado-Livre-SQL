@@ -7,18 +7,20 @@ com vendas em 2020 maior que 1500
 select
 c.[nome cliente]
 ,c.[data de nascimento] 
-,sum(o.nPedido) as TotalVendas
+,sum(o.qtdVendas) as TotalVendas
 from customer c
 inner join [order] o
 on
+c.IdVendedor = o.IdVendedor
+and
 c.idcliente = o.idcliente
+
 where
 c.[data de nascimento] = CONVERT(DATE, GETDATE())
 and
 o.dataPedido ='01-01-2020'
-c.tipoCustomer = 'vendedor'
 having 
-sum(v.nPedido)>1500
+sum(v.qtdVendas)>1500
 group by 
 c.[nome cliente]
 ,c.[data de nascimento] 
@@ -36,6 +38,7 @@ na categoria celular
 WITH RankingVendedores AS (
     SELECT
         o.idcliente,
+		o.idVendedor,
         ,MONTH(o.DataPedido) AS Mes
         ,YEAR(o.DataPedido) AS Ano
         ,SUM(o.ValorPedido) AS [valor total da transacao]
@@ -44,25 +47,28 @@ WITH RankingVendedores AS (
         ROW_NUMBER() OVER (PARTITION BY YEAR(o.DataPedido), MONTH(o.DataPedido) ORDER BY SUM(o.ValorPedido) DESC) AS Ranking
     FROM [Order] o
 
+	inner join item i on
+	o.iditem= i.iditem
+
 	inner join category g on
-	r.iditem = g.iditem
+	i.idcategoria = g.idcategoria
 
     WHERE 
-	g.categoria='celular'
+	g.Nomecategoria='celular'
 	and
-	YEAR(o.DataVenda) >='01-01-2020'
+	YEAR(o.DataCriacao) >='01-01-2020'
     
 	GROUP BY o.idcliente,
 	MONTH(DataPedido),
 	YEAR(DataPedido),
-	g.categoria
+	g.Nomecategoria
 )
 
 SELECT 
-c.[nome do cliente]
-,c.[sobrenome]
-,
-r.IdCliente
+c.nome
+,c.sobrenome
+,r.IdCliente
+,r.idvendedor
 ,r.Mes
 ,r.Ano
 ,r.TotalVendas
@@ -71,14 +77,11 @@ r.IdCliente
 FROM RankingVendedores r
 inner join customer c on
 r.idcliente = c.idcliente
-
-
+and
+r.idvendedor = c.idvendedor
 
 WHERE 
-c.tipoCustomer ='vendedor'
-and
 
-and
 r.Ranking <= 5
 
 
